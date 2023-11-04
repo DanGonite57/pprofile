@@ -1,0 +1,47 @@
+name: Test
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["2.7", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      # You can test your matrix by printing the current Python version
+      - name: Install pprofile
+        run: pip install .
+      - name: Run tests
+        run: |
+          pprofile --include demo --threads 0 demo/threads.py
+          pprofile --include demo --format callgrind demo/threads.py
+          pprofile --include demo --statistic .01 demo/threads.py
+          python demo/embedded.py
+          pprofile --include demo demo/threads.py
+          pprofile --include demo demo/empty.py
+          pprofile --format callgrind demo/empty.py
+          pprofile --include demo --statistic .01 demo/empty.py
+          pprofile --exclude-syspath demo/threads.py
+          pprofile --exclude-syspath --statistic .01 demo/threads.py
+          pprofile --include demo demo/encoding.py
+          LC_CTYPE=ISO-8859-15 pprofile --include demo demo/encoding.py
+          pprofile --include demo demo/encoding.py > /dev/null
+          pprofile --include demo demo/empty.py -search
+          pprofile --include demo -- demo/empty.py -search
+          pprofile --include demo demo/recurse.py
+          pprofile --include demo demo/recurse2.py
+          pprofile --include demo demo/recurse3.py
+          pprofile --include demo demo/recurse4.py
+          pprofile --include demo demo/twocalls.py
+          pprofile --include demo demo/twocalls2.py
+          pprofile --include demo demo/the_main.py
+          pprofile --include demo demo/module_globals.py
